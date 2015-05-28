@@ -1,0 +1,14 @@
+GEM
+  remote: https://ruby.taobao.org/
+  specs:
+    power_assert (0.2.2)
+    rmagick (2.13.4)
+    test-unit (3.0.8)
+      power_assert
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  rmagick
+  test-unit
