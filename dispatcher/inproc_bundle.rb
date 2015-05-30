@@ -1,0 +1,2 @@
+class InprocBundle
+end

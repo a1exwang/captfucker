@@ -1,0 +1,2 @@
+class UserResultBundle
+end
