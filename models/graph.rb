@@ -10,6 +10,22 @@ class Graph
   def self.from_file(file_path)
     Graph.new(file_path)
   end
+  def self.from_pts(pts, size = nil, foreground = [0, 0, 0], back_ground = [1, 1, 1])
+    size = pts_size(pts) unless size
+    graph = Graph.new(size.first, size.last)
+    pts.each do |pt|
+      graph.color_at(pt, foreground)
+    end
+    graph
+  end
+  def self.pts_size(pts)
+    xmax, ymax = 0, 0
+    pts.each do |pt|
+      xmax = pt.first if pt.first > xmax
+      ymax = pt.last if pt.last > ymax
+    end
+    [xmax + 1, ymax + 1]
+  end
 
   # two params: width, height
   # one param: file
@@ -17,9 +33,9 @@ class Graph
   def initialize(*args)
     case args.size
       when 0, 2
-        self.width = args[0] | DEFAULT_WIDTH
-        self.height = args[1] | DEFAULT_HEIGHT
-        @matrix = Graph.img_to_matrix(Magick::ImageList.new(self.width, self.height))
+        self.width = args[0] || DEFAULT_WIDTH
+        self.height = args[1] || DEFAULT_HEIGHT
+        @matrix = Graph.img_to_matrix(Magick::Image.new(self.width, self.height))
       when 1
         img = Magick::ImageList.new(args[0])
         @matrix = Graph.img_to_matrix(img)
@@ -31,7 +47,7 @@ class Graph
     self.adj_judge = AdjacentJudge::Near.new(self)
   end
   def color_at(pt, color = nil)
-    return nil unless valid_pt?(pt)
+    return nil unless valid_pt?(pt) && pt.first >= 0 && pt.first < @matrix.size && pt.last >= 0 && pt.last < @matrix.first.size
     if Graph.is_color?(color)
       return @matrix[pt.first][pt.last] = color
     elsif color.is_a?(Numeric)
@@ -61,7 +77,15 @@ class Graph
   def self.is_color?(color)
     color && color.is_a?(Array) && color.size == 3 && (0..1).include?(color[0]) && (0..1).include?(color[1]) && (0..1).include?(color[2])
   end
-
+  def to_pts(color = [0, 0, 0])
+    pts = []
+    self.width.times do |x|
+      self.height.times do |y|
+        pts.push([x, y]) if color_at([x, y]) == color
+      end
+    end
+    pts
+  end
   private
   def self.pixel_to_color(pix)
     throw ArgumentError unless pix.is_a?(Magick::Pixel)

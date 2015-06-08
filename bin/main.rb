@@ -1,9 +1,13 @@
+require './dispatcher/process_list'
+require './processors/all'
 
-require './models/graph'
-require './models/state'
-require './processors/color_processors/binary_processor'
-
-g = Graph.from_file('./test_imgs/src/desktop.png')
-pstate = State::PartOfState.new(g, '', 0)
-states = BinaryProcessor.process(pstate, mode: :gray_range, average_mode: :ntsc, gray_range: (0.65..0.9))
-states.part_of_states[0].graph.draw_to_file('./test_imgs/binary_processor/desktop.png')
+ProcessList.process './test_imgs/src/aca/from', from: :folder do |h|
+  #h.add BinaryProcessor, mode: :gray_range, average_mode: :ntsc, gray_range: (35908.0/65536..35990.0/65536)
+  h.add BinaryProcessor, mode: :gray_range, average_mode: :ntsc, gray_range: (0..35990.0/65536)
+  h.add ColorDivider, mode: :filter, filter_min: 4
+  h.add WeightProcessor, min_adjs: 4, direction: :thinner
+  h.add CharCuter
+  #h.add Normalizer, size: 50
+  h.add FileSaver, path: './test_imgs/src/aca/to'
+  h.add PictureFontIdentifyProcessor, path: '/fonts'
+end

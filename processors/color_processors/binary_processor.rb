@@ -1,26 +1,41 @@
-require './dispatcher/processor_thread_pool'
 require './models/graph'
 require './models/state'
 require './processors/processor'
 
 class BinaryProcessor < Processor
+
+  class Manager < BaseManager
+    # user thread
+    def self.process_all(state, params, bundle_map)
+      mgr = Manager.new(state, params)
+      state.possible_states.each do |poss|
+        poss.part_of_states.each do |part|
+          mgr.schedule(BinaryProcessor, part, params, bundle_map)
+        end
+      end
+
+      mgr.wait_until_all_done
+      yield(mgr.result) if block_given?
+      mgr.result
+    end
+  end
+
   def self.process(part_of_state, params)
     p = BinaryProcessor.new(part_of_state, params)
     p.process
     p.result
   end
   def process
-    ps = nil
     case @params[:mode]
       when :gray_range
-        ps = to_bin(@params[:gray_range], @params[:average_mode] || :mathimatical)
+        to_bin(@params[:gray_range], @params[:average_mode] || :mathimatical)
       when :custom
-        ps = to_bin { |color| @params[:bin_lambda].call(color) }
+        to_bin { |color| @params[:bin_lambda].call(color) }
       else
         throw ArgumentError
     end
-    poss = State::PossibleState.new([ps], @probability)
-    State.new([poss], @probability)
+    poss = State::PossibleState.new([State::PartOfState.new(@graph, @text, @probability)])
+    State.new([poss])
   end
 
   private
@@ -47,15 +62,15 @@ class BinaryProcessor < Processor
       throw ArgumentError unless Graph.is_color?(color)
       case mode
         when :ntsc
-          0.11 * color[0] + 0.59 * color[1] + 0.3 * color[2]
+          return 0.11 * color[0] + 0.59 * color[1] + 0.3 * color[2]
         when :mathimatical
-          (color[0] + color[1] + color[2]) / 3.0
+          return (color[0] + color[1] + color[2]) / 3.0
         when :r
-          color[0]
+          return color[0]
         when :g
-          color[1]
+          return color[1]
         when :b
-          color[2]
+          return color[2]
         else
           throw ArgumentError
       end

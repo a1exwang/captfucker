@@ -1,2 +1,0 @@
-class ColorDivideManager
-end
